@@ -335,16 +335,12 @@ function goBack(){
   document.getElementById('screen-enter').style.display='flex';
 }
 
-// Init
+// Init — credentials baked in
 window.addEventListener('load',()=>{
   const dbUrl='https://clinic-queue-5ca36-default-rtdb.firebaseio.com';
   const apiKey='AIzaSyBHuQ6Hk7dZIttODvZeANsQNWNj_G_W4wg';
-  if(dbUrl&&apiKey){
-    initFirebase(dbUrl,apiKey);
-  }else{
-    document.getElementById('screen-enter').style.display='none';
-    document.getElementById('setup-prompt').style.display='flex';
-  }
+  document.getElementById('setup-prompt').style.display='none';
+  initFirebase(dbUrl,apiKey);
 });
 </script>
 </body>
