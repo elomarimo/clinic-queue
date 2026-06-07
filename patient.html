@@ -337,8 +337,8 @@ function goBack(){
 
 // Init
 window.addEventListener('load',()=>{
-  const dbUrl=localStorage.getItem('cq_db_url');
-  const apiKey=localStorage.getItem('cq_api_key');
+  const dbUrl='https://clinic-queue-5ca36-default-rtdb.firebaseio.com';
+  const apiKey='AIzaSyBHuQ6Hk7dZIttODvZeANsQNWNj_G_W4wg';
   if(dbUrl&&apiKey){
     initFirebase(dbUrl,apiKey);
   }else{
