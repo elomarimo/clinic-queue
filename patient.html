@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>My Queue Status</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal-50:#E1F5EE;--teal-100:#9FE1CB;--teal-200:#5DCAA5;--teal-400:#1D9E75;--teal-600:#0F6E56;--teal-800:#085041;--teal-900:#04342C;
+    --amber-50:#FAEEDA;--amber-400:#BA7517;
+    --coral-50:#FAECE7;--coral-400:#D85A30;
+    --gray-50:#F1EFE8;--gray-100:#D3D1C7;--gray-400:#888780;--gray-600:#5F5E5A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--teal-900);min-height:100vh;display:flex;flex-direction:column;}
+
+  /* TOP BAR */
+  .top-bar{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem 0;}
+  .clinic-name{font-size:15px;font-weight:500;color:var(--teal-100);opacity:.7;}
+  .live-badge{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--teal-100);opacity:.6;}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+  /* TICKET ENTRY SCREEN */
+  #screen-enter{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;}
+  .enter-card{background:white;border-radius:20px;padding:2rem;width:100%;max-width:360px;text-align:center;}
+  .enter-card h2{font-size:20px;font-weight:600;color:var(--teal-900);margin-bottom:.5rem;}
+  .enter-card p{font-size:14px;color:var(--gray-600);margin-bottom:1.5rem;line-height:1.5;}
+  .ticket-input{width:100%;padding:14px;border:.5px solid #D3D1C7;border-radius:10px;font-family:'DM Mono',monospace;font-size:22px;text-align:center;text-transform:uppercase;letter-spacing:.1em;outline:none;color:var(--teal-900);}
+  .ticket-input:focus{border-color:var(--teal-400);}
+  .track-btn{width:100%;padding:14px;background:var(--teal-600);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:500;cursor:pointer;margin-top:12px;transition:background .15s;}
+  .track-btn:hover{background:var(--teal-800);}
+  .enter-err{color:var(--coral-400);font-size:13px;margin-top:8px;display:none;}
+  .or-divider{display:flex;align-items:center;gap:12px;margin:1.25rem 0;color:var(--gray-400);font-size:13px;}
+  .or-divider::before,.or-divider::after{content:'';flex:1;height:.5px;background:#D3D1C7;}
+  .general-btn{width:100%;padding:12px;background:transparent;color:var(--teal-600);border:.5px solid var(--teal-200);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:background .15s;}
+  .general-btn:hover{background:var(--teal-50);}
+
+  /* STATUS SCREEN */
+  #screen-status{flex:1;display:none;flex-direction:column;padding:1.5rem;gap:1rem;}
+
+  /* BIG STATUS CARD */
+  .status-card{background:white;border-radius:20px;padding:1.75rem;text-align:center;}
+  .status-icon{font-size:40px;margin-bottom:.5rem;}
+  .status-headline{font-size:14px;font-weight:500;color:var(--gray-600);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.75rem;}
+  .ticket-big{font-family:'DM Mono',monospace;font-size:64px;font-weight:500;color:var(--teal-900);line-height:1;}
+  .patient-name-lbl{font-size:16px;color:var(--gray-600);margin-top:.5rem;}
+  .status-state{margin-top:1rem;display:inline-block;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;}
+  .state-waiting{background:var(--amber-50);color:var(--amber-400);}
+  .state-serving{background:var(--teal-50);color:var(--teal-600);}
+  .state-done{background:var(--gray-50);color:var(--gray-600);}
+
+  /* POSITION & TIME ROW */
+  .info-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .info-tile{background:white;border-radius:16px;padding:1.25rem;text-align:center;}
+  .info-tile-val{font-family:'DM Mono',monospace;font-size:36px;font-weight:500;color:var(--teal-900);}
+  .info-tile-lbl{font-size:12px;color:var(--gray-600);margin-top:4px;text-transform:uppercase;letter-spacing:.06em;}
+
+  /* NOW SERVING CARD */
+  .now-serving-bar{background:rgba(255,255,255,.08);border-radius:14px;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;}
+  .now-serving-bar-lbl{font-size:12px;color:var(--teal-100);opacity:.6;text-transform:uppercase;letter-spacing:.06em;}
+  .now-serving-bar-val{font-family:'DM Mono',monospace;font-size:22px;color:white;font-weight:500;}
+
+  /* QUEUE BAR */
+  .queue-visual{background:white;border-radius:16px;padding:1.25rem;}
+  .queue-visual-title{font-size:12px;font-weight:500;color:var(--gray-600);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+  .queue-dots{display:flex;flex-wrap:wrap;gap:8px;}
+  .q-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'DM Mono',monospace;font-weight:500;}
+  .q-dot-done{background:var(--gray-50);color:var(--gray-400);}
+  .q-dot-serving{background:var(--teal-400);color:white;}
+  .q-dot-mine{background:var(--teal-900);color:white;box-shadow:0 0 0 3px var(--teal-100);}
+  .q-dot-waiting{background:var(--amber-50);color:var(--amber-400);}
+  .q-dot-other{background:#f1efe8;color:#aaa;}
+
+  /* GENERAL VIEW */
+  #screen-general{flex:1;display:none;flex-direction:column;padding:1.5rem;gap:1rem;}
+  .general-card{background:white;border-radius:20px;padding:1.75rem;}
+  .general-card h2{font-size:18px;font-weight:600;color:var(--teal-900);margin-bottom:1rem;}
+  .gen-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem;}
+  .gen-stat{background:var(--teal-50);border-radius:12px;padding:1rem;text-align:center;}
+  .gen-stat-val{font-family:'DM Mono',monospace;font-size:32px;font-weight:500;color:var(--teal-600);}
+  .gen-stat-lbl{font-size:11px;color:var(--teal-600);opacity:.7;text-transform:uppercase;letter-spacing:.06em;margin-top:4px;}
+  .now-serving-big{text-align:center;padding:1rem 0;}
+  .nsb-label{font-size:13px;color:var(--gray-600);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;}
+  .nsb-num{font-family:'DM Mono',monospace;font-size:72px;font-weight:500;color:var(--teal-900);line-height:1;}
+  .nsb-name{font-size:15px;color:var(--gray-600);margin-top:.25rem;}
+
+  .back-btn{width:100%;padding:12px;background:rgba(255,255,255,.1);color:var(--teal-100);border:.5px solid rgba(255,255,255,.2);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;}
+  .back-btn:hover{background:rgba(255,255,255,.15);}
+
+  .last-updated{text-align:center;font-size:11px;color:var(--teal-100);opacity:.4;padding-bottom:1.5rem;}
+  .not-found-msg{background:var(--coral-50);color:var(--coral-400);border-radius:10px;padding:.75rem 1rem;font-size:13px;margin-top:8px;display:none;}
+
+  /* SETUP PROMPT (if Firebase not configured) */
+  #setup-prompt{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;}
+  #setup-prompt h2{color:white;font-size:20px;margin-bottom:1rem;}
+  #setup-prompt p{color:var(--teal-100);opacity:.7;font-size:14px;line-height:1.6;}
+  .config-form{background:white;border-radius:16px;padding:1.5rem;width:100%;max-width:360px;margin-top:1.5rem;}
+  .config-form label{font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;}
+  .config-form input{width:100%;padding:9px 12px;border:.5px solid #D3D1C7;border-radius:8px;font-family:'DM Mono',monospace;font-size:12px;outline:none;margin-bottom:12px;}
+  .config-form input:focus{border-color:var(--teal-400);}
+  .config-save{width:100%;padding:11px;background:var(--teal-600);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <span class="clinic-name">🏥 Clinic Queue</span>
+  <span class="live-badge"><span class="live-dot"></span>Live</span>
+</div>
+
+<!-- SETUP PROMPT -->
+<div id="setup-prompt">
+  <h2>Configure Firebase</h2>
+  <p>Enter your Firebase details so this page can connect to the clinic queue.</p>
+  <div class="config-form">
+    <label>Database URL</label>
+    <input type="text" id="cfg-db-url" placeholder="https://...firebaseio.com" />
+    <label>API Key</label>
+    <input type="text" id="cfg-api-key" placeholder="AIzaSy..." />
+    <button class="config-save" onclick="saveConfig()">Connect →</button>
+  </div>
+</div>
+
+<!-- ENTER TICKET -->
+<div id="screen-enter">
+  <div class="enter-card">
+    <div style="font-size:36px;margin-bottom:.5rem">🎫</div>
+    <h2>Track Your Position</h2>
+    <p>Enter your ticket number to see your place in the queue and estimated wait time.</p>
+    <input type="text" class="ticket-input" id="ticket-inp" placeholder="A001" maxlength="6" oninput="this.value=this.value.toUpperCase()" />
+    <div class="not-found-msg" id="not-found-msg">Ticket not found in the queue. Check your number or ask the receptionist.</div>
+    <button class="track-btn" onclick="trackTicket()">Check My Position</button>
+    <div class="or-divider">or</div>
+    <button class="general-btn" onclick="showGeneral()">View General Queue Status</button>
+  </div>
+</div>
+
+<!-- STATUS SCREEN -->
+<div id="screen-status">
+  <div class="status-card">
+    <div class="status-icon" id="s-icon">🎫</div>
+    <div class="status-headline">Your Ticket</div>
+    <div class="ticket-big" id="s-ticket">—</div>
+    <div class="patient-name-lbl" id="s-name"></div>
+    <div class="status-state state-waiting" id="s-state">Waiting</div>
+  </div>
+
+  <div class="info-row" id="info-row-waiting">
+    <div class="info-tile">
+      <div class="info-tile-val" id="s-position">—</div>
+      <div class="info-tile-lbl">Position</div>
+    </div>
+    <div class="info-tile">
+      <div class="info-tile-val" id="s-wait">—</div>
+      <div class="info-tile-lbl">Est. Wait</div>
+    </div>
+  </div>
+
+  <div class="now-serving-bar">
+    <div>
+      <div class="now-serving-bar-lbl">Now Serving</div>
+      <div class="now-serving-bar-val" id="s-now-serving">—</div>
+    </div>
+    <div style="text-align:right">
+      <div class="now-serving-bar-lbl">In Queue</div>
+      <div class="now-serving-bar-val" id="s-queue-size">—</div>
+    </div>
+  </div>
+
+  <div class="queue-visual" id="queue-visual-wrap">
+    <div class="queue-visual-title">Queue Overview</div>
+    <div class="queue-dots" id="queue-dots"></div>
+  </div>
+
+  <button class="back-btn" onclick="goBack()">← Search Another Ticket</button>
+  <div class="last-updated">Updates automatically · <span id="s-updated">—</span></div>
+</div>
+
+<!-- GENERAL SCREEN -->
+<div id="screen-general">
+  <div class="general-card">
+    <h2>Queue Status</h2>
+    <div class="gen-stat-row">
+      <div class="gen-stat"><div class="gen-stat-val" id="g-waiting">—</div><div class="gen-stat-lbl">Waiting</div></div>
+      <div class="gen-stat"><div class="gen-stat-val" id="g-done">—</div><div class="gen-stat-lbl">Served</div></div>
+    </div>
+    <div class="now-serving-big">
+      <div class="nsb-label">Now Serving</div>
+      <div class="nsb-num" id="g-now-ticket">—</div>
+      <div class="nsb-name" id="g-now-name"></div>
+    </div>
+  </div>
+  <button class="back-btn" onclick="goBack()">← Track My Ticket</button>
+  <div class="last-updated">Updates automatically · <span id="g-updated">—</span></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
+<script>
+let stateData = {};
+let queueData = {};
+let myTicket = null;
+let refreshInterval = null;
+
+function pad(n){return String(n).padStart(2,'0');}
+function timeNow(){const d=new Date();return`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;}
+
+function saveConfig(){
+  const dbUrl=document.getElementById('cfg-db-url').value.trim();
+  const apiKey=document.getElementById('cfg-api-key').value.trim();
+  if(!dbUrl||!apiKey)return;
+  localStorage.setItem('cq_db_url',dbUrl);
+  localStorage.setItem('cq_api_key',apiKey);
+  location.reload();
+}
+
+function initFirebase(dbUrl,apiKey){
+  try{
+    const app=firebase.initializeApp({apiKey,databaseURL:dbUrl,projectId:'clinic-queue'});
+    const db=firebase.database(app);
+    db.ref('state').on('value',snap=>{
+      stateData=snap.val()||{};
+      if(myTicket)renderStatus();
+      renderGeneral();
+    });
+    db.ref('queue').on('value',snap=>{
+      const raw=snap.val()||{};
+      queueData=Object.values(raw).sort((a,b)=>a.order-b.order);
+      if(myTicket)renderStatus();
+    });
+    document.getElementById('setup-prompt').style.display='none';
+    document.getElementById('screen-enter').style.display='flex';
+  }catch(e){
+    document.getElementById('setup-prompt').style.display='flex';
+    document.getElementById('screen-enter').style.display='none';
+  }
+}
+
+function trackTicket(){
+  const val=document.getElementById('ticket-inp').value.trim().toUpperCase();
+  if(!val)return;
+  const found=queueData.find(p=>p.ticket===val);
+  if(!found){
+    document.getElementById('not-found-msg').style.display='block';
+    return;
+  }
+  document.getElementById('not-found-msg').style.display='none';
+  myTicket=val;
+  document.getElementById('screen-enter').style.display='none';
+  document.getElementById('screen-status').style.display='flex';
+  renderStatus();
+}
+
+function renderStatus(){
+  if(!myTicket)return;
+  const p=queueData.find(q=>q.ticket===myTicket);
+  const serving=stateData.serving;
+  const avgMin=stateData.avgServiceMin||5;
+
+  document.getElementById('s-updated').textContent=timeNow();
+  document.getElementById('s-ticket').textContent=myTicket;
+
+  if(!p){
+    // check if it was already served (in history) — show done
+    document.getElementById('s-icon').textContent='✅';
+    document.getElementById('s-name').textContent='';
+    document.getElementById('s-state').textContent='Served — you\'re all done!';
+    document.getElementById('s-state').className='status-state state-done';
+    document.getElementById('info-row-waiting').style.display='none';
+    document.getElementById('queue-visual-wrap').style.display='none';
+    document.getElementById('s-now-serving').textContent=serving?serving.ticket:'—';
+    document.getElementById('s-queue-size').textContent=stateData.waitingCount||0;
+    return;
+  }
+
+  document.getElementById('info-row-waiting').style.display='grid';
+  document.getElementById('queue-visual-wrap').style.display='block';
+  document.getElementById('s-name').textContent=p.name;
+  document.getElementById('s-now-serving').textContent=serving?serving.ticket:'—';
+  document.getElementById('s-queue-size').textContent=stateData.waitingCount||0;
+
+  if(p.status==='serving'){
+    document.getElementById('s-icon').textContent='🔔';
+    document.getElementById('s-state').textContent="It's your turn — please proceed!";
+    document.getElementById('s-state').className='status-state state-serving';
+    document.getElementById('s-position').textContent='NOW';
+    document.getElementById('s-wait').textContent='0 min';
+  }else{
+    const waitingBefore=queueData.filter(q=>q.status==='waiting'&&q.order<p.order).length;
+    const position=waitingBefore+1;
+    const estMin=position*avgMin;
+    document.getElementById('s-icon').textContent='⏳';
+    document.getElementById('s-state').textContent='In queue — please wait';
+    document.getElementById('s-state').className='status-state state-waiting';
+    document.getElementById('s-position').textContent='#'+position;
+    document.getElementById('s-wait').textContent=estMin<=1?'~1 min':'~'+estMin+' min';
+  }
+
+  // Queue dots visualization
+  const dots=document.getElementById('queue-dots');
+  const allVisible=queueData.slice(0,16);
+  dots.innerHTML=allVisible.map(q=>{
+    let cls='q-dot ';
+    if(q.ticket===myTicket)cls+='q-dot-mine';
+    else if(q.status==='serving')cls+='q-dot-serving';
+    else cls+='q-dot-waiting';
+    return`<div class="${cls}" title="${q.ticket}">${q.ticket.slice(1)}</div>`;
+  }).join('');
+  if(queueData.length>16){
+    dots.innerHTML+=`<div class="q-dot q-dot-other">+${queueData.length-16}</div>`;
+  }
+}
+
+function showGeneral(){
+  document.getElementById('screen-enter').style.display='none';
+  document.getElementById('screen-general').style.display='flex';
+  renderGeneral();
+}
+
+function renderGeneral(){
+  const serving=stateData.serving;
+  document.getElementById('g-waiting').textContent=stateData.waitingCount||0;
+  document.getElementById('g-done').textContent=stateData.doneCount||0;
+  document.getElementById('g-now-ticket').textContent=serving?serving.ticket:'—';
+  document.getElementById('g-now-name').textContent=serving?serving.name:'No one currently being served';
+  document.getElementById('g-updated').textContent=timeNow();
+}
+
+function goBack(){
+  myTicket=null;
+  document.getElementById('screen-status').style.display='none';
+  document.getElementById('screen-general').style.display='none';
+  document.getElementById('screen-enter').style.display='flex';
+}
+
+// Init
+window.addEventListener('load',()=>{
+  const dbUrl=localStorage.getItem('cq_db_url');
+  const apiKey=localStorage.getItem('cq_api_key');
+  if(dbUrl&&apiKey){
+    initFirebase(dbUrl,apiKey);
+  }else{
+    document.getElementById('screen-enter').style.display='none';
+    document.getElementById('setup-prompt').style.display='flex';
+  }
+});
+</script>
+</body>
+</html>
