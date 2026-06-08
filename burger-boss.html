@@ -108,10 +108,12 @@
 
 
   /* NOTIFICATION */
-  @keyframes flash-alert{0%,49%{background:#E81515;}50%,100%{background:#1B0000;}}
+  @keyframes flash-alert{0%,100%{background:#E81515;}50%{background:#B00000;}}50%,100%{background:#1B0000;}}
   @keyframes bounce-icon{0%,100%{transform:scale(1);}50%{transform:scale(1.3);}}
   .notif-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#E81515;color:white;text-align:center;padding:16px 20px;font-size:18px;font-weight:700;line-height:1.4;}
-  .notif-banner.show{display:block;animation:flash-alert 0.5s infinite;}
+  .notif-banner.show{display:block;background:#E81515;animation:flash-alert 0.6s infinite;}
+  .notif-banner.show span{animation:flash-text 0.6s infinite;}
+  @keyframes flash-text{0%,100%{opacity:1;}50%{opacity:0.2;}}
   .notif-enable-btn{margin-top:1rem;width:100%;padding:10px;background:rgba(255,255,255,0.15);color:white;border:.5px solid rgba(255,255,255,0.4);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:13px;cursor:pointer;}
   .notif-enable-btn:hover{background:rgba(255,255,255,0.25);}
   /* SETUP PROMPT (if Firebase not configured) */
@@ -132,7 +134,7 @@
   <span class="live-badge"><span class="live-dot"></span>Live</span>
 </div>
 
-<div class="notif-banner" id="notif-banner">🔔 Your order is ready! Please proceed to the counter.</div>
+<div class="notif-banner" id="notif-banner"><span>🔔 Your order is ready! Please proceed to the counter.</span></div>
 <!-- SETUP PROMPT -->
 <div id="setup-prompt">
   <h2>Configure Firebase</h2>
@@ -416,18 +418,18 @@ function triggerNotification(){
     if(audioCtx.state==='suspended') audioCtx.resume();
     let count=0;
     function nextBeep(){
-      if(count>=30) return;
+      if(count>=50) return;  // 50 beeps × 600ms = 30 seconds
       const osc=audioCtx.createOscillator();
       const gain=audioCtx.createGain();
       osc.connect(gain); gain.connect(audioCtx.destination);
       osc.frequency.value=count%2===0?880:1050;
       osc.type='sine';
       gain.gain.setValueAtTime(1.0, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.35);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.5);
       osc.start(audioCtx.currentTime);
-      osc.stop(audioCtx.currentTime+0.4);
+      osc.stop(audioCtx.currentTime+0.55);
       count++;
-      setTimeout(nextBeep,500);
+      setTimeout(nextBeep,600);  // matches flash interval exactly
     }
     nextBeep();
   } catch(e){ console.log('Audio error:',e); }
