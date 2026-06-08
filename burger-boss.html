@@ -382,42 +382,61 @@ function requestNotifPermission(){
   });
 }
 
-function triggerNotification(){
-  // 1. Vibrate phone
-  if(navigator.vibrate) navigator.vibrate([600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200,600,200]);
+// Pre-warm AudioContext on first user interaction so mobile allows sound
+let audioCtx = null;
+document.addEventListener('touchstart', function initAudio(){
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+  }
+  document.removeEventListener('touchstart', initAudio);
+}, {once:true});
 
-  // 2. Flash banner on screen
+function triggerNotification(){
+  // 1. Vibrate — 30 strong pulses (~15 seconds)
+  if(navigator.vibrate){
+    const pattern=[];
+    for(let i=0;i<30;i++){pattern.push(400);pattern.push(200);}
+    navigator.vibrate(pattern);
+  }
+
+  // 2. Flash banner — 30 flashes over 30 seconds
   const banner = document.getElementById('notif-banner');
   banner.classList.add('show');
-  setTimeout(()=>banner.classList.remove('show'), 30000);
+  let flashes=0;
+  const flashInterval=setInterval(()=>{
+    flashes++;
+    banner.style.opacity=flashes%2===0?'1':'0.2';
+    if(flashes>=60){clearInterval(flashInterval);banner.style.opacity='1';banner.classList.remove('show');}
+  },500);
 
-  // 3. Beep sound
+  // 3. Beep — 30 beeps using setTimeout chain (works on mobile)
   try{
-    const ctx = new (window.AudioContext||window.webkitAudioContext)();
-    let beepCount = 0;
-    const totalBeeps = 30;
-    function playBeep(){
-      if(beepCount >= totalBeeps) return;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.frequency.value = beepCount % 2 === 0 ? 880 : 1050;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.8, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.45);
-      beepCount++;
-      setTimeout(playBeep, 500);
+    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    let count=0;
+    function nextBeep(){
+      if(count>=30) return;
+      const osc=audioCtx.createOscillator();
+      const gain=audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.frequency.value=count%2===0?880:1050;
+      osc.type='sine';
+      gain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.35);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime+0.4);
+      count++;
+      setTimeout(nextBeep,500);
     }
-    playBeep();
-  } catch(e){}
+    nextBeep();
+  } catch(e){ console.log('Audio error:',e); }
 
   // 4. Browser push notification (if permitted)
   if(notifGranted){
     new Notification('🔔 Your order is ready!',{
-      body: 'Please proceed to the Burger Boss counter.',
-      icon: document.querySelector('link[rel="apple-touch-icon"]')?.href || ''
+      body:'Please proceed to the Burger Boss counter.',
+      icon:document.querySelector('link[rel="apple-touch-icon"]')?.href||''
     });
   }
 }
