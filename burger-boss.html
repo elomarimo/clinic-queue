@@ -80,12 +80,12 @@
   .queue-visual{background:white;border-radius:16px;padding:1.25rem;}
   .queue-visual-title{font-size:12px;font-weight:500;color:var(--gray-600);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
   .queue-dots{display:flex;flex-wrap:wrap;gap:8px;}
-  .q-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'DM Mono',monospace;font-weight:500;}
-  .q-dot-done{background:var(--gray-50);color:var(--gray-400);}
-  .q-dot-serving{background:var(--teal-400);color:white;}
-  .q-dot-mine{background:var(--teal-900);color:white;box-shadow:0 0 0 3px var(--teal-100);}
-  .q-dot-waiting{background:var(--amber-50);color:var(--amber-400);}
-  .q-dot-other{background:#f1efe8;color:#aaa;}
+  .q-dot{min-width:44px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:0 8px;font-size:11px;font-family:'DM Mono',monospace;font-weight:600;}
+  .q-dot-done{background:#EEEEEE;color:#999999;}
+  .q-dot-serving{background:#E81515;color:white;}
+  .q-dot-mine{background:#1B2BA6;color:white;box-shadow:0 0 0 3px #AABBFF;}
+  .q-dot-waiting{background:#FFF3E0;color:#E65C00;}
+  .q-dot-other{background:#EEEEEE;color:#999;}
 
   /* GENERAL VIEW */
   #screen-general{flex:1;display:none;flex-direction:column;padding:1.5rem;gap:1rem;}
@@ -254,7 +254,22 @@ function initFirebase(dbUrl,apiKey){
     db.ref('queue').on('value',snap=>{
       const raw=snap.val()||{};
       queueData=Object.values(raw).sort((a,b)=>a.order-b.order);
-      if(myTicket)renderStatus();
+      // If queue was reset and ticket no longer exists, go back to enter screen
+      if(myTicket){
+        const stillExists=queueData.find(q=>q.ticket===myTicket);
+        const wasDone=!stillExists&&lastServedTicket===myTicket;
+        if(!stillExists&&!wasDone){
+          // Queue was reset — clear ticket and show enter screen
+          myTicket=null;
+          lastServedTicket=null;
+          document.getElementById('screen-status').style.display='none';
+          document.getElementById('screen-enter').style.display='flex';
+          document.getElementById('ticket-inp').value='';
+          document.getElementById('not-found-msg').style.display='none';
+        } else {
+          renderStatus();
+        }
+      }
     });
     document.getElementById('setup-prompt').style.display='none';
     document.getElementById('screen-enter').style.display='flex';
@@ -332,7 +347,7 @@ function renderStatus(){
     if(q.ticket===myTicket)cls+='q-dot-mine';
     else if(q.status==='serving')cls+='q-dot-serving';
     else cls+='q-dot-waiting';
-    return`<div class="${cls}" title="${q.ticket}">${q.ticket.slice(1)}</div>`;
+    return`<div class="${cls}" title="${q.ticket}">${q.ticket}</div>`;
   }).join('');
   if(queueData.length>16){
     dots.innerHTML+=`<div class="q-dot q-dot-other">+${queueData.length-16}</div>`;
