@@ -114,8 +114,8 @@
   .notif-banner.show{display:block;}
   
   50%{opacity:0.2;}}
-  .notif-enable-btn{margin-top:8px;width:100%;padding:12px;background:transparent;color:var(--teal-600);border:.5px solid var(--teal-200);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s;}
-  .notif-enable-btn:hover{background:var(--teal-50);}
+  
+  
   /* SETUP PROMPT (if Firebase not configured) */
   #setup-prompt{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;}
   #setup-prompt h2{color:white;font-size:20px;margin-bottom:1rem;}
@@ -159,7 +159,6 @@
     <button class="track-btn" onclick="trackTicket()">Check My Position</button>
     <div class="or-divider">or</div>
     <button class="general-btn" onclick="showGeneral()">View General Queue Status</button>
-    <button class="notif-enable-btn" id="notif-btn" onclick="requestNotifPermission()">🔔 Enable notifications when my turn comes</button>
   </div>
 </div>
 
@@ -379,27 +378,6 @@ function goBack(){
 
 // ── NOTIFICATIONS ──────────────────────────────────────────────
 let lastServedTicket = null;
-let notifGranted = false;
-
-function requestNotifPermission(){
-  if(!('Notification' in window)){
-    alert('Your browser does not support notifications. Keep the page open to receive the beep alert.');
-    return;
-  }
-  Notification.requestPermission().then(perm=>{
-    notifGranted = perm === 'granted';
-    const btn = document.getElementById('notif-btn');
-    if(notifGranted){
-      btn.textContent = '✅ Notifications enabled!';
-      btn.style.background = 'var(--teal-50)';
-      btn.style.color = 'var(--teal-600)';
-      btn.style.borderColor = 'var(--teal-200)';
-      btn.disabled = true;
-      btn.style.opacity = '0.7';
-    } else {
-      btn.textContent = '❌ Permission denied — beep alert still active';
-    }
-  });
 }
 
 // Unlock audio on ANY user interaction — touch, click, or scroll
@@ -467,13 +445,6 @@ function triggerNotification(){
     }); // end audioCtx.resume
   } catch(e){ console.log('Audio error:',e); }
 
-  // 4. Browser push notification (if permitted)
-  if(notifGranted){
-    new Notification('🔔 Your order is ready!',{
-      body:'Please proceed to the Burger Boss counter.',
-      icon:document.querySelector('link[rel="apple-touch-icon"]')?.href||''
-    });
-  }
 }
 
 // Check on every status update if it just became "serving"
