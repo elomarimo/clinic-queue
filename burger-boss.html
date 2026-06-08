@@ -384,26 +384,27 @@ function requestNotifPermission(){
 
 function triggerNotification(){
   // 1. Vibrate phone
-  if(navigator.vibrate) navigator.vibrate([400,100,400,100,600]);
+  if(navigator.vibrate) navigator.vibrate([500,200,500,200,500,200,500,200,500,200,500,200,500,200,500,200,500,200,500,200,500,200,500,200,500,200,500,200,500,200,500,200,500,200,500,200,500,200,500]);
 
   // 2. Flash banner on screen
   const banner = document.getElementById('notif-banner');
   banner.classList.add('show');
-  setTimeout(()=>banner.classList.remove('show'), 8000);
+  setTimeout(()=>banner.classList.remove('show'), 30000);
 
   // 3. Beep sound
   try{
     const ctx = new (window.AudioContext||window.webkitAudioContext)();
-    [0,0.3,0.6].forEach(delay=>{
+    const beeps = Array.from({length:37},(_,i)=>i*0.4);
+    beeps.forEach(delay=>{
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain); gain.connect(ctx.destination);
-      osc.frequency.value = 880;
+      osc.frequency.value = delay % 0.8 === 0 ? 880 : 1050;
       osc.type = 'sine';
-      gain.gain.setValueAtTime(0.6, ctx.currentTime+delay);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+0.25);
+      gain.gain.setValueAtTime(0.7, ctx.currentTime+delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+0.3);
       osc.start(ctx.currentTime+delay);
-      osc.stop(ctx.currentTime+delay+0.3);
+      osc.stop(ctx.currentTime+delay+0.35);
     });
   } catch(e){}
 
