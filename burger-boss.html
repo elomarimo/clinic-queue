@@ -114,8 +114,8 @@
   .notif-banner.show{display:block;}
   
   50%{opacity:0.2;}}
-  .notif-enable-btn{margin-top:1rem;width:100%;padding:10px;background:rgba(255,255,255,0.15);color:white;border:.5px solid rgba(255,255,255,0.4);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:13px;cursor:pointer;}
-  .notif-enable-btn:hover{background:rgba(255,255,255,0.25);}
+  .notif-enable-btn{margin-top:8px;width:100%;padding:12px;background:transparent;color:var(--teal-600);border:.5px solid var(--teal-200);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s;}
+  .notif-enable-btn:hover{background:var(--teal-50);}
   /* SETUP PROMPT (if Firebase not configured) */
   #setup-prompt{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;}
   #setup-prompt h2{color:white;font-size:20px;margin-bottom:1rem;}
@@ -391,23 +391,38 @@ function requestNotifPermission(){
     const btn = document.getElementById('notif-btn');
     if(notifGranted){
       btn.textContent = '✅ Notifications enabled!';
-      btn.style.background = 'rgba(255,255,255,0.25)';
+      btn.style.background = 'var(--teal-50)';
+      btn.style.color = 'var(--teal-600)';
+      btn.style.borderColor = 'var(--teal-200)';
       btn.disabled = true;
+      btn.style.opacity = '0.7';
     } else {
       btn.textContent = '❌ Permission denied — beep alert still active';
     }
   });
 }
 
-// Pre-warm AudioContext on first user interaction so mobile allows sound
+// Unlock audio on ANY user interaction — touch, click, or scroll
 let audioCtx = null;
-document.addEventListener('touchstart', function initAudio(){
-  if(!audioCtx){
+
+function unlockAudio(){
+  if(audioCtx) return;
+  try{
     audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended') audioCtx.resume();
-  }
-  document.removeEventListener('touchstart', initAudio);
-}, {once:true});
+    // Play a silent buffer to fully unlock on iOS
+    const buf = audioCtx.createBuffer(1,1,22050);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.start(0);
+    audioCtx.resume().then(()=>{ console.log('Audio unlocked:', audioCtx.state); });
+  } catch(e){ console.log('Audio unlock error:', e); }
+}
+
+// Unlock on any interaction
+['touchstart','touchend','click','keydown'].forEach(evt=>{
+  document.addEventListener(evt, unlockAudio, {once:false, passive:true});
+});
 
 function triggerNotification(){
   // 1. Vibrate — 30 strong pulses (~15 seconds)
@@ -429,9 +444,11 @@ function triggerNotification(){
 
   // 3. Beep — 30 beeps using setTimeout chain (works on mobile)
   try{
-    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended') audioCtx.resume();
-    let count=0;
+    if(!audioCtx) unlockAudio();
+    if(!audioCtx){ console.log('No audio context'); return; }
+    // Force resume and wait for it before playing
+    audioCtx.resume().then(()=>{
+      let count=0;
     function nextBeep(){
       if(count>=50) return;  // 50 beeps × 600ms = 30 seconds
       const osc=audioCtx.createOscillator();
@@ -447,6 +464,7 @@ function triggerNotification(){
       setTimeout(nextBeep,600);  // matches flash interval exactly
     }
     nextBeep();
+    }); // end audioCtx.resume
   } catch(e){ console.log('Audio error:',e); }
 
   // 4. Browser push notification (if permitted)
